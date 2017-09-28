@@ -168,7 +168,23 @@ function svgTagToPJS($svgTag, program = new PJSProgram()){
 
 	const tagName = $svgTag.tagName
 
-	const {fill, fillOpacity, stroke, strokeOpacity, strokeWidth, strokeLineCap} = $outputWindow.getComputedStyle($svgTag)
+	const computedStyle = $outputWindow.getComputedStyle($svgTag)
+
+	const getAttrs = function(attrNames, defaultAttrValues){
+		return attrNames.map((attrName, a) => {
+			let value = computedStyle[attrName]
+			const defaultValue = defaultAttrValues[a]
+
+			if(typeof defaultValue === 'number') value = parseInt(value)
+
+			if(value === null || typeof value === 'undefined') value = defaultValue
+			else if(typeof value === 'string') value = value.trim()
+
+			return value
+		})
+	}
+
+	const {fill, fillOpacity, stroke, strokeOpacity, strokeWidth, strokeLineCap} = computedStyle
 
 	if(styleIsDefined(fill)){
 		program.fill(...css3ColorToPJSParameters(fill, fillOpacity))
@@ -193,7 +209,9 @@ function svgTagToPJS($svgTag, program = new PJSProgram()){
 			'square' : 'PROJECT'
 		}[strokeLineCap])
 	}
-console.log(tagName)
+
+	console.log(tagName)
+
 	switch(tagName){
 		case 'svg':
 		case 'g':
@@ -204,7 +222,6 @@ console.log(tagName)
 		case 'rect':
 			program.rect(
 				...getAttrs(
-					$svgTag,
 					['x', 'y', 'width', 'height', 'rx'],
 					[0, 0, 0, 0, undefined]
 				).addNumbers([
@@ -215,7 +232,6 @@ console.log(tagName)
 		case 'circle':
 			program.ellipse(
 				...getAttrs(
-					$svgTag,
 					['cx', 'cy', 'r', 'r'],
 					[0, 0, 0, 0]
 				).addNumbers([
@@ -226,7 +242,6 @@ console.log(tagName)
 		case 'ellipse':
 			program.ellipse(
 				...getAttrs(
-					$svgTag,
 					['cx', 'cy', 'rx', 'ry'],
 					[0, 0, 0, 0]
 				).addNumbers([
@@ -405,19 +420,6 @@ console.log(tagName)
 	}
 
 	return program
-}
-
-const getAttrs = function(element, attrNames, defaultAttrValues){
-	const arr = []
-	attrNames.forEach((attrName, a) => {
-		let value = element.getAttribute(attrName)
-		if((value === null || typeof value === 'undefined') && defaultAttrValues) value = defaultAttrValues[a]
-		if(typeof value === 'string') value = value.trim()
-		//if(!isNaN(value)){
-			arr.push(value)
-		//}
-	})
-	return arr
 }
 
 const css3ColorToPJSParameters = function(color, opacity){
