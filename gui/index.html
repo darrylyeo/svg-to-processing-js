@@ -1,0 +1,67 @@
+<meta charset="utf-8">
+<title>SVG to Processing.js Converter</title>
+
+<style>
+	body {
+		display: flex;
+	}
+	
+	#svg-to-pjs-converter {
+		display: flex;
+		flex-direction: column;
+		/*max-width: max-content;*/
+		margin: auto;
+	}
+	#svg-to-pjs-converter > * {
+		margin: 0;
+	}
+	#svg-to-pjs-converter > * + * {
+		margin-top: 1em;
+	}
+
+	#svg-to-pjs-converter #svg-to-pjs-output {
+		display: flex;
+		height: 20rem;
+	}
+	#svg-to-pjs-converter:not(.input-received) #svg-to-pjs-output {
+		display: none;
+	}
+
+	textarea {
+		font-family: monospace;
+		width: 100%;
+	}
+
+	#pjs-output {
+		flex: 2;
+		min-width: 30rem;
+	}
+	#svg-output {
+		flex: 3;
+	}
+</style>
+
+<aside id="svg-to-pjs-converter">
+	<h2 data-fontsize="22" data-lineheight="33">Choose SVG file:</h2>
+	<input type="file" id="svg-file" name="svg-file" accept=".svg" data-placement="right" data-title="" data-toggle="tooltip" title="" data-original-title=".svg">
+	<label>
+		<input type="checkbox" id="svg-option-center-graphic" name="svg-option-center-graphic" checked="">
+		Center graphic around origin
+	</label>
+	<label>
+		<input type="checkbox" id="svg-option-round-decimals" name="svg-option-round-decimals" checked="">
+		Round decimals to
+		<input type="number" id="svg-option-round-to-decimal-places" name="svg-option-round-to-decimal-places" min="1" max="10" value="3">
+		places
+	</label>
+	<form id="svg-input-form">
+		<textarea id="svg-input" rows="4" placeholder="Or manually paste SVG code here."></textarea>
+	</form>
+	<div id="svg-to-pjs-output">
+		<textarea id="pjs-output" onclick="this.select()" rows="8"></textarea>
+		<iframe id="svg-output"></iframe>
+	</div>
+</aside>
+
+<script src="../src/path-data-polyfill.js"></script>
+<script src="../src/svg-to-pjs.js"></script>
