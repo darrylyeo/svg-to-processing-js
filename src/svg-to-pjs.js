@@ -1,8 +1,10 @@
+{
+
 const creditLine = "/**\n * Converted from SVG format using @darrylyeo's SVG-to-PJS converter:\n * darryl-yeo.com/svg-to-processing-js-converter\n */"
 
 const $ = document.querySelector.bind(document)
 
-const wrapper = $('#svg-to-pjs-converter')
+const $wrapper = $('#svg-to-pjs-converter')
 
 const $output = $('#svg-output')
 const $outputWindow = $output.contentWindow
@@ -55,19 +57,19 @@ svgInput.addEventListener('keyup', function(e){
 })
 
 function updateSVGOutput(data){
-	wrapper.classList.add('input-received')
+	$wrapper.classList.add('input-received')
 	
-	let svg = $outputDocument.body.querySelector('svg')
-	svg && svg.parentNode.removeChild(svg)
+	let $svg = $outputDocument.querySelector('svg')
+	if($svg) $svg.parentNode.removeChild($svg)
 	$outputDocument.body.innerHTML += data
 
-	svg = $outputDocument.querySelector('svg')
-	if(svg){
+	$svg = $outputDocument.querySelector('svg')
+	if($svg){
 		try {
 			$pjsOutput.value = [
 				creditLine,
 				svgToPJS(
-					svg,
+					$svg,
 					optionCenterGraphic.checked,
 					optionRoundDecimals.checked,
 					optionRoundToDecimalPlaces.value
@@ -75,8 +77,8 @@ function updateSVGOutput(data){
 				creditLine
 			].join('\n\n')
 		}catch(e){
-			$pjsOutput.value = 'Looks like there was an error!\n' + e.message + ' (' + e.lineNumber + ')'
-			//$pjsOutput.value = 'Looks like there was an error! Good thing you're testing it for me. Tell me about it and I\'ll be sure to resolve it.\n' + e.message + ' (' + e.lineNumber + ')'
+			$pjsOutput.value = `Looks like there was an error!\n${e.message} (${e.lineNumber})`
+			//$pjsOutput.value = `Looks like there was an error! Good thing you're testing it for me. Tell me about it and I'll be sure to resolve it.\n${e.message} (${e.lineNumber})`
 			console.error(e)
 		}
 	}
@@ -112,7 +114,7 @@ const svgToPJS = function(svg, centerGraphic, roundNumbers, roundToDecimalPlaces
 	for(let f = 0; f < output.length; f++){
 		const functionCall = output[f]
 		const functionName = nameOfFunctionCall(functionCall)
-		//console.log('---------\n' + f + ' ' + functionCall)
+		//console.log(`---------\n${f} ${functionCall}`)
 
 		const mappedFunctionName = overrideableFunctions[functionName]
 		if(mappedFunctionName){
@@ -121,12 +123,12 @@ const svgToPJS = function(svg, centerGraphic, roundNumbers, roundToDecimalPlaces
 			const lastOverrideableFunctionCallName = nameOfFunctionCall(lastOverrideableFunctionCall)
 			// If the current function call exactly matches the last function call for the same mapped name, remove the current function call
 			if(functionCall === lastOverrideableFunctionCall){
-				//console.log('Matches call on line ' + lastOverrideableFunctionCallLineNumber + ': removing this line ' + functionCall)
+				//console.log(`Matches call on line ${lastOverrideableFunctionCallLineNumber}: removing this line ${functionCall}`)
 				output[f] = undefined
 			}
 			// If the NAME of the current function call is the same as the NAME of the last call for the same mapped name AND a non-overrideable function (e.g. a shape) has not been called between the two
 			else if(functionName === lastOverrideableFunctionCallName && !nonOverrideableFunctionWasCalledSinceLastOverrideableFunction){
-				//console.log('Overrode call on line ' + lastOverrideableFunctionCallLineNumber + ': removing line ' + output[lastOverrideableFunctionCallLineNumber])
+				//console.log(`Overrode call on line ${lastOverrideableFunctionCallLineNumber}: removing line ${output[lastOverrideableFunctionCallLineNumber]}`)
 				//The current call overrode the previous call; remove the previous call
 				output[lastOverrideableFunctionCallLineNumber] = undefined
 			}
@@ -148,13 +150,13 @@ const svgToPJS = function(svg, centerGraphic, roundNumbers, roundToDecimalPlaces
 	return output.filter(function(e){return e}).join('\n')
 }
 
-function svgTagToPJS(svgTag){
-	if(!svgTag) return ''
+function svgTagToPJS($svgTag){
+	if(!$svgTag) return ''
 
 	const output = []
-	const tagName = svgTag.tagName
+	const tagName = $svgTag.tagName
 
-	const computedStyle = $outputWindow.getComputedStyle(svgTag)
+	const computedStyle = $outputWindow.getComputedStyle($svgTag)
 
 	const fill = computedStyle.fill
 	const fillOpacity = computedStyle.fillOpacity
@@ -191,7 +193,7 @@ console.log(tagName)
 	switch(tagName){
 		case 'svg':
 		case 'g':
-			for(const child of svgTag.children){
+			for(const child of $svgTag.children){
 				output.push(svgTagToPJS(child))
 			}
 			break
@@ -199,7 +201,7 @@ console.log(tagName)
 			output.push(
 				functionCallAsString('rect',
 					getAttrs(
-						svgTag,
+						$svgTag,
 						['x', 'y', 'width', 'height', 'rx'],
 						[0, 0, 0, 0, undefined]
 					).addNumbers([
@@ -212,7 +214,7 @@ console.log(tagName)
 			output.push(
 				functionCallAsString('ellipse',
 					getAttrs(
-						svgTag,
+						$svgTag,
 						['cx', 'cy', 'r', 'r'],
 						[0, 0, 0, 0]
 					).addNumbers([
@@ -225,7 +227,7 @@ console.log(tagName)
 			output.push(
 				functionCallAsString('ellipse',
 					getAttrs(
-						svgTag,
+						$svgTag,
 						['cx', 'cy', 'rx', 'ry'],
 						[0, 0, 0, 0]
 					).addNumbers([
@@ -237,7 +239,7 @@ console.log(tagName)
 		case 'line':
 			output.push(
 				functionCallAsString('line',
-					getAttrs(svgTag,
+					getAttrs($svgTag,
 						['x1', 'y1', 'x2', 'y2'],
 						[0, 0, 0, 0]
 					).addNumbers([
@@ -248,7 +250,7 @@ console.log(tagName)
 			break
 		case 'polyline':
 		case 'polygon':
-			const points = svgTag.getAttribute('points').split(' ')
+			const points = $svgTag.getAttribute('points').split(' ')
 			output.push(functionCallAsString('beginShape'))
 			for(const p of points){
 				if(p){
@@ -269,7 +271,7 @@ console.log(tagName)
 			const previousBezierControlPoint = {x: 0, y: 0}
 			const previousBezierEndPoint = {x: 0, y: 0}
 			
-			const pathData = svgTag.getPathData({normalize: true})
+			const pathData = $svgTag.getPathData({normalize: true})
 			
 			let pathOpen = false
 
@@ -413,15 +415,15 @@ console.log(tagName)
 				functionCallAsString(
 					'text',
 					[
-						getTextNodes(svgTag),
-						svgTag.getAttribute('x') || 0,
-						svgTag.getAttribute('y') || 0
+						getTextNodes($svgTag),
+						$svgTag.getAttribute('x') || 0,
+						$svgTag.getAttribute('y') || 0
 					].addNumbers([
 						0, offsetX, offsetY
 					])
 				)
 			)
-			for(const child of svgTag.children){
+			for(const child of $svgTag.children){
 				output.push(svgTagToPJS(child))
 			}
 			break
@@ -429,8 +431,8 @@ console.log(tagName)
 			//output.push(functionCallAsString())
 			break
 		case 'use':
-			const tagToUse = $outputDocument.querySelector('#svg-output ' + svgTag.href)
-			output.push(tagToUse ? svgTagToPJS(tagToUse) : '')
+			const $tagToUse = $outputDocument.querySelector('#svg-output ' + $svgTag.href)
+			output.push($tagToUse ? svgTagToPJS($tagToUse) : '')
 	}
 
 	return output.join('\n')
@@ -449,7 +451,7 @@ const functionCallAsString = function(functionName, args, numberOfRequiredArgs, 
 		// Add quotes around string parameters
 		/*args = args.map(a => {
 			if(typeof a === 'string'){
-				return JSON.stringify('"' + a + '"').slice(1, -1)
+				return JSON.stringify(`"${a}"`).slice(1, -1)
 			}else{
 				return a
 			}
@@ -548,9 +550,9 @@ const css3ColorToPJSParameters = function(color, opacity){
 
 	let parameters
 	if(color[0] === 'u'){
-		const linkedElement = $outputDocument.querySelector(color.slice(color.indexOf('(') + 1, -1))
-		if(linkedElement && linkedElement.tagName === 'linearGradient'){
-			return css3ColorToPJSParameters(window.getComputedStyle(linkedElement.children[0], 'stop-color'), opacity)
+		const $linkedElement = $outputDocument.querySelector(color.slice(color.indexOf('(') + 1, -1))
+		if($linkedElement && $linkedElement.tagName === 'linearGradient'){
+			return css3ColorToPJSParameters(window.getComputedStyle($linkedElement.children[0], 'stop-color'), opacity)
 		}else{
 			return
 		}
@@ -621,4 +623,6 @@ const addSwappedKeysAndValues = function(obj){
 		obj[obj[key]] = key
 	}
 	return obj
+}
+
 }
