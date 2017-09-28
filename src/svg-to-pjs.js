@@ -3,6 +3,7 @@ var creditLine = "/**\n * Converted from SVG format using @darrylyeo's SVG-to-PJ
 var wrapper = document.getElementById("svg-to-pjs-converter");
 
 var output = document.getElementById("svg-output");
+var outputWindow = output.contentWindow;
 var outputDocument = output.contentDocument || output.contentWindow.document;
 var pathDataScript = outputDocument.createElement("script");
 pathDataScript.setAttribute("src", "../src/path-data-polyfill.js")
@@ -145,14 +146,16 @@ var svgToPJS = function(svg, centerGraphic, roundNumbers, roundToDecimalPlaces){
 	return output.filter(function(e){return e}).join("\n");
 }
 
-function svgTagToPJS(svgTag){console.log(svgTag)
+function svgTagToPJS(svgTag){
 	if(!svgTag) return '';
 
 	var output = [];
 	var tagName = svgTag.tagName;
 
-	var fill = svgTag.getAttribute("fill");//window.getComputedStyle(svgTag).fill;
-	var fillOpacity = svgTag.getAttribute("fillOpacity");//window.getComputedStyle(svgTag).fillOpacity;
+	var computedStyle = outputWindow.getComputedStyle(svgTag);
+
+	var fill = computedStyle.fill;
+	var fillOpacity = computedStyle.fillOpacity;
 	if(styleIsDefined(fill)){
 		var pjsParameters = css3ColorToPJSParameters(fill, fillOpacity);
 		output.push(functionCallAsString(pjsParameters ? "fill" : "noFill", pjsParameters));
@@ -162,8 +165,8 @@ function svgTagToPJS(svgTag){console.log(svgTag)
 		output.push(functionCallAsString("fill", 0));
 	}
 
-	var stroke = svgTag.getAttribute("stroke");//window.getComputedStyle(svgTag).stroke;
-	var strokeOpacity = svgTag.getAttribute("strokeOpacity");//window.getComputedStyle(svgTag).strokeOpacity;
+	var stroke = computedStyle.stroke;
+	var strokeOpacity = computedStyle.strokeOpacity;
 	if(styleIsDefined(stroke)){
 		var pjsParameters = css3ColorToPJSParameters(stroke, strokeOpacity);
 		output.push(functionCallAsString(pjsParameters ? "stroke" : "noStroke", pjsParameters));
@@ -171,10 +174,10 @@ function svgTagToPJS(svgTag){console.log(svgTag)
 		output.push(functionCallAsString("noStroke"));
 	}
 
-	var strokeWidth = svgTag.getAttribute("stroke-width");//window.getComputedStyle(svgTag).strokeWidth;
+	var strokeWidth = computedStyle.strokeWidth;
 	if(styleIsDefined(strokeWidth)) output.push(functionCallAsString("strokeWeight", parseInt(strokeWidth)));
 
-	var strokeLineCap = svgTag.getAttribute("stroke-line-cap");//window.getComputedStyle(svgTag).strokeWidth;
+	var strokeLineCap = computedStyle.strokeLineCap;
 	if(styleIsDefined(strokeLineCap)){
 		output.push("strokeCap", {
 			"butt" : "SQUARE",
