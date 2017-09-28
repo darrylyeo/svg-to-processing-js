@@ -170,18 +170,15 @@ function svgTagToPJS($svgTag, program = new PJSProgram()){
 
 	const computedStyle = $outputWindow.getComputedStyle($svgTag)
 
-	const getAttrs = function(attrNames, defaultAttrValues){
-		return attrNames.map((attrName, a) => {
-			let value = computedStyle[attrName]
-			const defaultValue = defaultAttrValues[a]
+	const attr = function(attrName, defaultValue){
+		let value = computedStyle[attrName]
 
-			if(typeof defaultValue === 'number') value = parseInt(value)
+		if(typeof defaultValue === 'number') value = parseInt(value)
 
-			if(value === null || typeof value === 'undefined') value = defaultValue
-			else if(typeof value === 'string') value = value.trim()
+		if(value === null || typeof value === 'undefined') value = defaultValue
+		else if(typeof value === 'string') value = value.trim()
 
-			return value
-		})
+		return value
 	}
 
 	const {fill, fillOpacity, stroke, strokeOpacity, strokeWidth, strokeLineCap} = computedStyle
@@ -221,42 +218,36 @@ function svgTagToPJS($svgTag, program = new PJSProgram()){
 			break
 		case 'rect':
 			program.rect(
-				...getAttrs(
-					['x', 'y', 'width', 'height', 'rx'],
-					[0, 0, 0, 0, undefined]
-				).addNumbers([
-					offsetX, offsetY
-				])
+				attr('x', 0) + offsetX,
+				attr('y', 0) + offsetY,
+				attr('width', 0),
+				attr('height', 0),
+				attr('rx')
 			)
 			break
 		case 'circle':
+			let r
 			program.ellipse(
-				...getAttrs(
-					['cx', 'cy', 'r', 'r'],
-					[0, 0, 0, 0]
-				).addNumbers([
-					offsetX, offsetY
-				])
+				attr('cx', 0) + offsetX,
+				attr('cy', 0) + offsetY,
+				r = attr('r', 0) * 2,
+				r
 			)
 			break
 		case 'ellipse':
 			program.ellipse(
-				...getAttrs(
-					['cx', 'cy', 'rx', 'ry'],
-					[0, 0, 0, 0]
-				).addNumbers([
-					offsetX, offsetY
-				])
+				attr('cx', 0) + offsetX,
+				attr('cy', 0) + offsetY,
+				attr('rx', 0) * 2,
+				attr('ry', 0) * 2
 			)
 			break
 		case 'line':
 			program.line(
-				...getAttrs($svgTag,
-					['x1', 'y1', 'x2', 'y2'],
-					[0, 0, 0, 0]
-				).addNumbers([
-					offsetX, offsetY, offsetX, offsetY
-				])
+				attr('x1', 0) + offsetX,
+				attr('y1', 0) + offsetY,
+				attr('x2', 0) + offsetX,
+				attr('y2', 0) + offsetY
 			)
 			break
 		case 'polyline':
@@ -264,13 +255,11 @@ function svgTagToPJS($svgTag, program = new PJSProgram()){
 			const points = $svgTag.getAttribute('points').split(' ')
 			program.beginShape()
 			for(const p of points){
-				if(p){
-					program.vertex(
-						...p.split(',').addNumbers([
-							offsetX, offsetY
-						])
-					)
-				}
+				if(!p) continue
+				program.vertex(
+					p[0] + offsetX,
+					p[1] + offsetY
+				)
 			}
 			program.endShape(tagName === 'polygon' ? 'CLOSE' : undefined)
 			break
@@ -298,37 +287,27 @@ function svgTagToPJS($svgTag, program = new PJSProgram()){
 						pathOpen = true
 						program.beginShape()
 						program.vertex(
-							...[
-								segmentData[0], segmentData[1]
-							].addNumbers([
-								offsetX, offsetY
-							])
+							segmentData[0] + offsetX,
+							segmentData[1] + offsetY
 						)
 						break
 					case 'L':
 						program.vertex(
-							...[
-								segmentData[0], segmentData[1]
-							].addNumbers([
-								offsetX, offsetY
-							])
+							segmentData[0] + offsetX,
+							segmentData[1] + offsetY
 						)
 						break
 					case 'C':
 					case 'S':
 						program.bezierVertex(
-							...[
-								segmentData[0] || previousBezierEndPoint.x * 2 - previousBezierControlPoint.x,
-								segmentData[1] || previousBezierEndPoint.y * 2 - previousBezierControlPoint.y,
-								// segmentData[relativeSegmentType === PATHSEG_CURVETO_CUBIC_REL ? 'x1' : 'x2'],
-								//segmentData[relativeSegmentType === PATHSEG_CURVETO_CUBIC_REL ? 'y1' : 'y2'],
-								segmentData[2],
-								segmentData[3],
-								segmentData[4],
-								segmentData[5]
-							].addNumbers([
-								offsetX, offsetY, offsetX, offsetY, offsetX, offsetY
-							])
+							(segmentData[0] || previousBezierEndPoint.x * 2 - previousBezierControlPoint.x) + offsetX,
+							(segmentData[1] || previousBezierEndPoint.y * 2 - previousBezierControlPoint.y) + offsetY,
+							// segmentData[relativeSegmentType === PATHSEG_CURVETO_CUBIC_REL ? 'x1' : 'x2'],
+							// segmentData[relativeSegmentType === PATHSEG_CURVETO_CUBIC_REL ? 'y1' : 'y2'],
+							segmentData[2] + offsetX,
+							segmentData[3] + offsetY,
+							segmentData[4] + offsetX,
+							segmentData[5] + offsetY
 						)
 						previousBezierControlPoint.x = segmentData[2]
 						previousBezierControlPoint.y = segmentData[3]
@@ -348,13 +327,12 @@ function svgTagToPJS($svgTag, program = new PJSProgram()){
 							segmentData[3]
 						)
 						program.bezierVertex(
-							...[
-								cubicBezier.x1, cubicBezier.y1,
-								cubicBezier.x2, cubicBezier.y2,
-								segmentData[2], segmentData[3]
-							].addNumbers([
-								offsetX, offsetY, offsetX, offsetY, offsetX, offsetY
-							])
+							cubicBezier.x1 + offsetX,
+							cubicBezier.y1 + offsetY,
+							cubicBezier.x2 + offsetX,
+							cubicBezier.y2 + offsetY,
+							segmentData[2] + offsetX,
+							segmentData[3] + offsetY
 						)
 						previousBezierControlPoint.x = cubicBezier.x2
 						previousBezierControlPoint.y = cubicBezier.y2
@@ -365,21 +343,15 @@ function svgTagToPJS($svgTag, program = new PJSProgram()){
 						break
 					case 'H':
 						program.vertex(
-							...[
-								segmentData[0], currentPos.y
-							].addNumbers([
-								offsetX, offsetY
-							])
+							segmentData[0] + offsetX,
+							currentPos.y + offsetY
 						)
 						currentPos.x = segmentData[0]
 						break
 					case 'V':
 						program.vertex(
-							...[
-								currentPos.x, segmentData[0]
-							].addNumbers([
-								offsetX, offsetY
-							])
+							currentPos.x + offsetX,
+							segmentData[0] + offsetY
 						)
 						currentPos.y = segmentData[0]
 						break
@@ -397,13 +369,9 @@ function svgTagToPJS($svgTag, program = new PJSProgram()){
 		case 'text':
 		case 'tref':
 			program.text(
-				...[
-					getTextNodes($svgTag),
-					$svgTag.getAttribute('x') || 0,
-					$svgTag.getAttribute('y') || 0
-				].addNumbers([
-					0, offsetX, offsetY
-				])
+				getTextNodes($svgTag),
+				attr('x', 0) + offsetX,
+				attr('y', 0) + offsetY
 			)
 			for(const child of $svgTag.children){
 				svgTagToPJS(child, program)
@@ -487,16 +455,6 @@ const getTextNodes = function(element){
 	return t
 }
 
-Array.prototype.addNumbers = function(arr){
-	console.log('before', this, arr)
-	for(let n = 0; n < Math.min(this.length, arr.length); n++){
-		if(/*!isNaN(this[n]) && */!isNaN(arr[n])){
-			this[n] = +this[n] + arr[n]
-		}
-	}
-	console.log('after', this)
-	return this
-}
 Array.prototype.equals = function(array){
 	return this.length === array.length && this.every((x, i) => x === array[i])
 }
