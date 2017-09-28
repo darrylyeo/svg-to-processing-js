@@ -212,8 +212,8 @@ function svgTagToPJS($svgTag, program = new PJSProgram()){
 	switch(tagName){
 		case 'svg':
 		case 'g':
-			for(const child of $svgTag.children){
-				svgTagToPJS(child, program)
+			for(const $child of $svgTag.children){
+				svgTagToPJS($child, program)
 			}
 			break
 		case 'rect':
@@ -373,8 +373,8 @@ function svgTagToPJS($svgTag, program = new PJSProgram()){
 				attr('x', 0) + offsetX,
 				attr('y', 0) + offsetY
 			)
-			for(const child of $svgTag.children){
-				svgTagToPJS(child, program)
+			for(const $child of $svgTag.children){
+				svgTagToPJS($child, program)
 			}
 			break
 		case 'image':
@@ -385,21 +385,25 @@ function svgTagToPJS($svgTag, program = new PJSProgram()){
 			if($tagToUse){
 				svgTagToPJS($tagToUse, program)
 			}
+			break
 	}
 
 	return program
 }
 
 const css3ColorToPJSParameters = function(color, opacity){
-	if(!styleIsDefined(color)) return
+	if(!styleIsDefined(color)) return []
 
 	let parameters
 	if(color[0] === 'u'){
-		const $linkedElement = $outputDocument.querySelector(color.slice(color.indexOf('(') + 1, -1))
-		if($linkedElement && $linkedElement.tagName === 'linearGradient'){
-			return css3ColorToPJSParameters(window.getComputedStyle($linkedElement.children[0], 'stop-color'), opacity)
+		const url = color.match(/url\(['"]?(.*?)['"]?\)/)[1]
+		const $linkedElement = $outputDocument.querySelector(url)
+		if($linkedElement && $linkedElement.tagName === 'linearGradient' || $linkedElement.tagName === 'radialGradient'){
+			const stopColor = $outputWindow.getComputedStyle($linkedElement.children[0])['stop-color']
+			console.log(stopColor)
+			parameters = css3ColorToPJSParameters(stopColor, opacity)
 		}else{
-			return
+			return []
 		}
 	}else if(color[0] === 'r'){
 		parameters = color.slice(color.indexOf('(') + 1, -1).replace(/ /g, '').split(',')
