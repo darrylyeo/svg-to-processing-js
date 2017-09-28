@@ -16,20 +16,20 @@ $outputDocument.head.appendChild($pathDataScript)
 const $outputWrapper = $('#svg-to-pjs-output')
 const $pjsOutput = $('#pjs-output')
 
-const svgFilePicker = $('#svg-file')
-const svgInput = $('#svg-input')
-const optionCenterGraphic = $('#svg-option-center-graphic')
-const optionRoundDecimals = $('#svg-option-round-decimals')
-const optionRoundToDecimalPlaces = $('#svg-option-round-to-decimal-places')
+const $svgFilePicker = $('#svg-file')
+const $svgInput = $('#svg-input')
+const $optionCenterGraphic = $('#svg-option-center-graphic')
+const $optionRoundDecimals = $('#svg-option-round-decimals')
+const $optionRoundToDecimalPlaces = $('#svg-option-round-to-decimal-places')
 
-optionCenterGraphic.addEventListener('change', updateSVGOutput, false)
-optionRoundDecimals.addEventListener('change', function(e) {
-	optionRoundToDecimalPlaces.disabled = !optionRoundDecimals.checked
+$optionCenterGraphic.addEventListener('change', () => updateSVGOutput(), false)
+$optionRoundDecimals.addEventListener('change', function(e) {
+	$optionRoundToDecimalPlaces.disabled = !$optionRoundDecimals.checked
 	updateSVGOutput()
 }, false)
-optionRoundToDecimalPlaces.addEventListener('change', updateSVGOutput, false)
+$optionRoundToDecimalPlaces.addEventListener('change', () => updateSVGOutput(), false)
 
-svgFilePicker.addEventListener('change', function(e) {
+$svgFilePicker.addEventListener('change', function(e) {
 	const files = e.target.files; // FileList object
 
 	// files is a FileList of File objects. List some properties.
@@ -38,8 +38,8 @@ svgFilePicker.addEventListener('change', function(e) {
 
 		reader.onloadend = function(e) {
 			if (e.target.readyState == FileReader.DONE) { // DONE == 2
-				svgInput.value = e.target.result
-				updateSVGOutput(e.target.result)
+				$svgInput.value = e.target.result
+				updateSVGOutput()
 			}
 		}
 
@@ -47,16 +47,18 @@ svgFilePicker.addEventListener('change', function(e) {
 	}
 }, false)
 
-svgInput.addEventListener('change', function(e){
-	updateSVGOutput(this.value)
+$svgInput.addEventListener('change', function(e){
+	updateSVGOutput()
 })
-svgInput.addEventListener('keyup', function(e){
+$svgInput.addEventListener('keyup', function(e){
 	if(e.keyCode == 13){
-		updateSVGOutput(this.value)
+		updateSVGOutput()
 	}
 })
 
-function updateSVGOutput(data){
+function updateSVGOutput(data = $svgInput.value){
+	if(!data) return
+
 	$wrapper.classList.add('input-received')
 	
 	let $svg = $outputDocument.querySelector('svg')
@@ -70,9 +72,9 @@ function updateSVGOutput(data){
 				creditLine,
 				svgToPJS(
 					$svg,
-					optionCenterGraphic.checked,
-					optionRoundDecimals.checked,
-					optionRoundToDecimalPlaces.value
+					$optionCenterGraphic.checked,
+					$optionRoundDecimals.checked,
+					$optionRoundToDecimalPlaces.value
 				),
 				creditLine
 			].join('\n\n')
@@ -87,103 +89,105 @@ function updateSVGOutput(data){
 
 let offsetX, offsetY
 let svgRoundNumbers, svgRoundToDecimalPlaces
-const svgToPJS = function(svg, centerGraphic, roundNumbers, roundToDecimalPlaces){
-	offsetX = centerGraphic ? parseFloat(svg.getAttribute('width')) / -2 : 0
-	offsetY = centerGraphic ? parseFloat(svg.getAttribute('height')) / -2 : 0
+const svgToPJS = function($svg, centerGraphic, roundNumbers, roundToDecimalPlaces){
+	offsetX = centerGraphic ? parseFloat($svg.getAttribute('width')) / -2 : 0
+	offsetY = centerGraphic ? parseFloat($svg.getAttribute('height')) / -2 : 0
 
 	svgRoundNumbers = roundNumbers
 	svgRoundToDecimalPlaces = roundToDecimalPlaces
 
-	// Trim overrideable function calls that are redundant
-	const output = svgTagToPJS(svg).split('\n')
-
-	const overrideableFunctions = {
-		'fill' : 'fill',
-		'noFill' : 'fill',
-		'stroke' : 'stroke',
-		'noStroke' : 'stroke',
-		'strokeCap' : 'strokeCap'
-	}
-	const lastOverrideableFunctionCallForName = {
-		// 'mapped name' : ['function call', line#]
-		'fill': ['', 0],
-		'stroke': ['', 0],
-		'strokeCap': ['', 0],
-	}
-	let nonOverrideableFunctionWasCalledSinceLastOverrideableFunction = false
-	for(let f = 0; f < output.length; f++){
-		const functionCall = output[f]
-		const functionName = nameOfFunctionCall(functionCall)
-		//console.log(`---------\n${f} ${functionCall}`)
-
-		const mappedFunctionName = overrideableFunctions[functionName]
-		if(mappedFunctionName){
-			const lastOverrideableFunctionCall = lastOverrideableFunctionCallForName[mappedFunctionName][0]
-			var lastOverrideableFunctionCallLineNumber = lastOverrideableFunctionCallForName[mappedFunctionName][1]
-			const lastOverrideableFunctionCallName = nameOfFunctionCall(lastOverrideableFunctionCall)
-			// If the current function call exactly matches the last function call for the same mapped name, remove the current function call
-			if(functionCall === lastOverrideableFunctionCall){
-				//console.log(`Matches call on line ${lastOverrideableFunctionCallLineNumber}: removing this line ${functionCall}`)
-				output[f] = undefined
-			}
-			// If the NAME of the current function call is the same as the NAME of the last call for the same mapped name AND a non-overrideable function (e.g. a shape) has not been called between the two
-			else if(functionName === lastOverrideableFunctionCallName && !nonOverrideableFunctionWasCalledSinceLastOverrideableFunction){
-				//console.log(`Overrode call on line ${lastOverrideableFunctionCallLineNumber}: removing line ${output[lastOverrideableFunctionCallLineNumber]}`)
-				//The current call overrode the previous call; remove the previous call
-				output[lastOverrideableFunctionCallLineNumber] = undefined
-			}
-			nonOverrideableFunctionWasCalledSinceLastOverrideableFunction = false
-		}else{
-			nonOverrideableFunctionWasCalledSinceLastOverrideableFunction = true
-		}
-		lastOverrideableFunctionCallForName[mappedFunctionName] = [functionCall, output[f] ? f : lastOverrideableFunctionCallLineNumber]
-	}
-	/*
-	for(let f = 0; f < output.length; f++){
-		const functionName = output[f].substr(0, output[f].indexOf('('))
-		const functionName1 = ((f + 1) < output.length) ? output[f + 1].substr(0, output[f + 1].indexOf('(')) : ''
-		if((functionName === functionName1 && overrideableFunctions[functionName]) || overrideableFunctions[functionName] === functionName1){
-			output[f] = undefined
-		}
-	}
-	*/
-	return output.filter(function(e){return e}).join('\n')
+	const output = svgTagToPJS($svg).toString()
+	return output
 }
 
-function svgTagToPJS($svgTag){
+
+const STYLE_COMMANDS = ['fill', 'stroke', 'strokeWeight', 'strokeCap']
+const SHAPE_COMMANDS = ['rect', 'ellipse', 'line', 'beginShape', 'vertex', 'bezierVertex', 'endShape', 'text']
+const ALL_COMMANDS = [...STYLE_COMMANDS, ...SHAPE_COMMANDS]
+
+class PJSProgram {
+	constructor(){
+		this.commands = []
+		this.currentStyle = {}
+	}
+
+	addCommand(name, ...args){
+		args = args.filter(x => x !== undefined)
+
+		const isStyleCommand = STYLE_COMMANDS.includes(name)
+		const isShapeCommand = SHAPE_COMMANDS.includes(name)
+
+		if(svgRoundNumbers){
+			args = args.map(a => isNaN(a) ? a : roundToDecimalPlaces(a, svgRoundToDecimalPlaces))
+		}
+
+		// Prevent duplicate style commands
+		if(
+			isStyleCommand &&
+			name in this.currentStyle &&
+			this.currentStyle[name].args.equals(args)
+		) return
+		
+		const command = {
+			name,
+			args,
+			used: isShapeCommand // shape commands are used by default; style commands become used if a shape uses it
+		}
+		this.commands.push(command)
+
+		if(isShapeCommand){
+			for(const name in this.currentStyle){
+				this.currentStyle[name].used = true
+			}
+		}else{
+			this.currentStyle[name] = command
+		}
+	}
+
+	toString(){
+		return this.commands.filter(command => command.used).map(({name, args}) => {
+			if(!args.length){
+				name = {
+					'fill': 'noFill',
+					'stroke': 'noStroke'
+				}[name] || name
+			}
+			return `${name}(${args.join(', ')});`
+		}).join('\n')
+	}
+}
+
+for(const command of ALL_COMMANDS){
+	PJSProgram.prototype[command] = function(...args){
+		this.addCommand(command, ...args)
+	}
+}
+
+function svgTagToPJS($svgTag, program = new PJSProgram()){
 	if(!$svgTag) return ''
 
-	const output = []
 	const tagName = $svgTag.tagName
 
-	const computedStyle = $outputWindow.getComputedStyle($svgTag)
+	const {fill, fillOpacity, stroke, strokeOpacity, strokeWidth, strokeLineCap} = $outputWindow.getComputedStyle($svgTag)
 
-	const fill = computedStyle.fill
-	const fillOpacity = computedStyle.fillOpacity
 	if(styleIsDefined(fill)){
-		const pjsParameters = css3ColorToPJSParameters(fill, fillOpacity)
-		output.push(functionCallAsString(pjsParameters ? 'fill' : 'noFill', pjsParameters))
+		program.fill(...css3ColorToPJSParameters(fill, fillOpacity))
 	}else if(fill === 'none' || fill === 'transparent'){
-		output.push(functionCallAsString('noFill'))
-	}else{console.log(9, functionCallAsString('fill', 0))
-		output.push(functionCallAsString('fill', 0))
-	}
-
-	const stroke = computedStyle.stroke
-	const strokeOpacity = computedStyle.strokeOpacity
-	if(styleIsDefined(stroke)){
-		const pjsParameters = css3ColorToPJSParameters(stroke, strokeOpacity)
-		output.push(functionCallAsString(pjsParameters ? 'stroke' : 'noStroke', pjsParameters))
+		program.fill()
 	}else{
-		output.push(functionCallAsString('noStroke'))
+		program.fill(0)
 	}
 
-	const strokeWidth = computedStyle.strokeWidth
-	if(styleIsDefined(strokeWidth)) output.push(functionCallAsString('strokeWeight', parseInt(strokeWidth)))
+	if(styleIsDefined(stroke)){
+		program.stroke(...css3ColorToPJSParameters(stroke, strokeOpacity))
+	}else{
+		program.stroke()
+	}
 
-	const strokeLineCap = computedStyle.strokeLineCap
+	if(styleIsDefined(strokeWidth)) program.strokeWeight(parseInt(strokeWidth))
+
 	if(styleIsDefined(strokeLineCap)){
-		output.push('strokeCap', {
+		program.strokeCap({
 			'butt' : 'SQUARE',
 			'round' : 'ROUND',
 			'square' : 'PROJECT'
@@ -194,76 +198,66 @@ console.log(tagName)
 		case 'svg':
 		case 'g':
 			for(const child of $svgTag.children){
-				output.push(svgTagToPJS(child))
+				svgTagToPJS(child, program)
 			}
 			break
 		case 'rect':
-			output.push(
-				functionCallAsString('rect',
-					getAttrs(
-						$svgTag,
-						['x', 'y', 'width', 'height', 'rx'],
-						[0, 0, 0, 0, undefined]
-					).addNumbers([
-						offsetX, offsetY
-					])
-				)
+			program.rect(
+				...getAttrs(
+					$svgTag,
+					['x', 'y', 'width', 'height', 'rx'],
+					[0, 0, 0, 0, undefined]
+				).addNumbers([
+					offsetX, offsetY
+				])
 			)
 			break
 		case 'circle':
-			output.push(
-				functionCallAsString('ellipse',
-					getAttrs(
-						$svgTag,
-						['cx', 'cy', 'r', 'r'],
-						[0, 0, 0, 0]
-					).addNumbers([
-						offsetX, offsetY
-					])
-				)
+			program.ellipse(
+				...getAttrs(
+					$svgTag,
+					['cx', 'cy', 'r', 'r'],
+					[0, 0, 0, 0]
+				).addNumbers([
+					offsetX, offsetY
+				])
 			)
 			break
 		case 'ellipse':
-			output.push(
-				functionCallAsString('ellipse',
-					getAttrs(
-						$svgTag,
-						['cx', 'cy', 'rx', 'ry'],
-						[0, 0, 0, 0]
-					).addNumbers([
-						offsetX, offsetY
-					])
-				)
+			program.ellipse(
+				...getAttrs(
+					$svgTag,
+					['cx', 'cy', 'rx', 'ry'],
+					[0, 0, 0, 0]
+				).addNumbers([
+					offsetX, offsetY
+				])
 			)
 			break
 		case 'line':
-			output.push(
-				functionCallAsString('line',
-					getAttrs($svgTag,
-						['x1', 'y1', 'x2', 'y2'],
-						[0, 0, 0, 0]
-					).addNumbers([
-						offsetX, offsetY, offsetX, offsetY
-					])
-				)
+			program.line(
+				...getAttrs($svgTag,
+					['x1', 'y1', 'x2', 'y2'],
+					[0, 0, 0, 0]
+				).addNumbers([
+					offsetX, offsetY, offsetX, offsetY
+				])
 			)
 			break
 		case 'polyline':
 		case 'polygon':
 			const points = $svgTag.getAttribute('points').split(' ')
-			output.push(functionCallAsString('beginShape'))
+			program.beginShape()
 			for(const p of points){
 				if(p){
-					output.push(
-						functionCallAsString('vertex',
-							p.split(',').addNumbers([
-								offsetX, offsetY
-							])
-						)
+					program.vertex(
+						...p.split(',').addNumbers([
+							offsetX, offsetY
+						])
 					)
 				}
 			}
-			output.push(functionCallAsString('endShape', tagName === 'polygon' ? 'CLOSE' : undefined))
+			program.endShape(tagName === 'polygon' ? 'CLOSE' : undefined)
 			break
 		case 'path':
 			const currentPos = {x: 0, y: 0}
@@ -280,52 +274,46 @@ console.log(tagName)
 				switch(segment.type){
 					case 'Z':
 						pathOpen = false
-						output.push(functionCallAsString('endShape'))
+						program.endShape()
 						break
 					case 'M':
 						if(pathOpen){
-							output.push(functionCallAsString('endShape'))
+							program.endShape()
 						}
 						pathOpen = true
-						output.push(functionCallAsString('beginShape'))
-						output.push(
-							functionCallAsString('vertex',
-								[
-									segmentData[0], segmentData[1]
-								].addNumbers([
-									offsetX, offsetY
-								])
-							)
+						program.beginShape()
+						program.vertex(
+							...[
+								segmentData[0], segmentData[1]
+							].addNumbers([
+								offsetX, offsetY
+							])
 						)
 						break
 					case 'L':
-						output.push(
-							functionCallAsString('vertex',
-								[
-									segmentData[0], segmentData[1]
-								].addNumbers([
-									offsetX, offsetY
-								])
-							)
+						program.vertex(
+							...[
+								segmentData[0], segmentData[1]
+							].addNumbers([
+								offsetX, offsetY
+							])
 						)
 						break
 					case 'C':
 					case 'S':
-						output.push(
-							functionCallAsString('bezierVertex',
-								[
-									segmentData[0] || previousBezierEndPoint.x * 2 - previousBezierControlPoint.x,
-									segmentData[1] || previousBezierEndPoint.y * 2 - previousBezierControlPoint.y,
-									// segmentData[relativeSegmentType === PATHSEG_CURVETO_CUBIC_REL ? 'x1' : 'x2'],
-									//segmentData[relativeSegmentType === PATHSEG_CURVETO_CUBIC_REL ? 'y1' : 'y2'],
-									segmentData[2],
-									segmentData[3],
-									segmentData[4],
-									segmentData[5]
-								].addNumbers([
-									offsetX, offsetY, offsetX, offsetY, offsetX, offsetY
-								])
-							)
+						program.bezierVertex(
+							...[
+								segmentData[0] || previousBezierEndPoint.x * 2 - previousBezierControlPoint.x,
+								segmentData[1] || previousBezierEndPoint.y * 2 - previousBezierControlPoint.y,
+								// segmentData[relativeSegmentType === PATHSEG_CURVETO_CUBIC_REL ? 'x1' : 'x2'],
+								//segmentData[relativeSegmentType === PATHSEG_CURVETO_CUBIC_REL ? 'y1' : 'y2'],
+								segmentData[2],
+								segmentData[3],
+								segmentData[4],
+								segmentData[5]
+							].addNumbers([
+								offsetX, offsetY, offsetX, offsetY, offsetX, offsetY
+							])
 						)
 						previousBezierControlPoint.x = segmentData[2]
 						previousBezierControlPoint.y = segmentData[3]
@@ -344,16 +332,14 @@ console.log(tagName)
 							segmentData[2],
 							segmentData[3]
 						)
-						output.push(
-							functionCallAsString('bezierVertex',
-								[
-									cubicBezier.x1, cubicBezier.y1,
-									cubicBezier.x2, cubicBezier.y2,
-									segmentData[2], segmentData[3]
-								].addNumbers([
-									offsetX, offsetY, offsetX, offsetY, offsetX, offsetY
-								])
-							)
+						program.bezierVertex(
+							...[
+								cubicBezier.x1, cubicBezier.y1,
+								cubicBezier.x2, cubicBezier.y2,
+								segmentData[2], segmentData[3]
+							].addNumbers([
+								offsetX, offsetY, offsetX, offsetY, offsetX, offsetY
+							])
 						)
 						previousBezierControlPoint.x = cubicBezier.x2
 						previousBezierControlPoint.y = cubicBezier.y2
@@ -363,41 +349,25 @@ console.log(tagName)
 					case 'A':
 						break
 					case 'H':
-						output.push(
-							functionCallAsString('vertex',
-								[
-									segmentData[0], currentPos.y
-								].addNumbers([
-									offsetX, offsetY
-								])
-							)
+						program.vertex(
+							...[
+								segmentData[0], currentPos.y
+							].addNumbers([
+								offsetX, offsetY
+							])
 						)
 						currentPos.x = segmentData[0]
 						break
 					case 'V':
-						output.push(
-							functionCallAsString('vertex',
-								[
-									currentPos.x, segmentData[0]
-								].addNumbers([
-									offsetX, offsetY
-								])
-							)
+						program.vertex(
+							...[
+								currentPos.x, segmentData[0]
+							].addNumbers([
+								offsetX, offsetY
+							])
 						)
 						currentPos.y = segmentData[0]
 						break
-						/*output.push(
-							functionCallAsString('bezierVertex',
-								[
-									segmentData.x1, segmentData.y1,
-									segmentData.x1, segmentData.y1,
-									segmentData.x, segmentData.y
-								].addNumbers([
-									offsetX, offsetY, offsetX, offsetY, offsetX, offsetY
-								])
-							)
-						)
-						break*/
 				}
 
 				if(segment.type !== 'H' || segment.type !== 'V'){
@@ -406,25 +376,22 @@ console.log(tagName)
 				}
 			}
 			if(pathOpen){
-				output.push(functionCallAsString('endShape'))
+				program.endShape()
 			}
 			break
 		case 'text':
 		case 'tref':
-			output.push(
-				functionCallAsString(
-					'text',
-					[
-						getTextNodes($svgTag),
-						$svgTag.getAttribute('x') || 0,
-						$svgTag.getAttribute('y') || 0
-					].addNumbers([
-						0, offsetX, offsetY
-					])
-				)
+			program.text(
+				...[
+					getTextNodes($svgTag),
+					$svgTag.getAttribute('x') || 0,
+					$svgTag.getAttribute('y') || 0
+				].addNumbers([
+					0, offsetX, offsetY
+				])
 			)
 			for(const child of $svgTag.children){
-				output.push(svgTagToPJS(child))
+				svgTagToPJS(child, program)
 			}
 			break
 		case 'image':
@@ -432,105 +399,13 @@ console.log(tagName)
 			break
 		case 'use':
 			const $tagToUse = $outputDocument.querySelector('#svg-output ' + $svgTag.href)
-			output.push($tagToUse ? svgTagToPJS($tagToUse) : '')
-	}
-
-	return output.join('\n')
-}
-
-const functionCallAsString = function(functionName, args, numberOfRequiredArgs, removeSemicolon){
-	let output = functionName + '('
-
-	if(typeof args !== 'undefined'){
-		if(typeof args === 'string'){
-			args = args.split(',')
-		}else if(typeof args !== 'object'){
-			args = [args]
-		}
-
-		// Add quotes around string parameters
-		/*args = args.map(a => {
-			if(typeof a === 'string'){
-				return JSON.stringify(`"${a}"`).slice(1, -1)
-			}else{
-				return a
+			if($tagToUse){
+				svgTagToPJS($tagToUse, program)
 			}
-		})*/
-		if(numberOfRequiredArgs !== undefined){
-			while(args.length < numberOfRequiredArgs){
-				args.push(undefined)
-			}
-			args = args.slice(0, numberOfRequiredArgs)
-		}
-
-		if(svgRoundNumbers){
-			args = args.map(a => {
-				if(!isNaN(a)){
-					return roundToDecimalPlaces(a, svgRoundToDecimalPlaces)
-				}else{
-					return a
-				}
-			})
-		}
-		while(true){
-			const a = args[args.length - 1]
-			if(isNaN(a) || a === 'NaN' || a === undefined || a === 'undefined'){
-				args.pop()
-			}else{
-				break
-			}
-		}
-		output += args.join(', ')
 	}
 
-	output += ')'
-	if(!removeSemicolon){
-		output += ';'
-	}
-	return output
+	return program
 }
-
-const nameOfFunctionCall = function(functionCall){
-	return functionCall.substr(0, functionCall.indexOf('('))
-}
-
-/*
-const FunctionCall = function(name, args, numberOfRequiredArgs, omitSemicolon){
-	this.name = name
-
-	if(args){
-		if(typeof args === 'string'){
-			args = args.split(',')
-		}else if(typeof args !== 'object'){
-			args = [args]
-		}
-
-		if(numberOfRequiredArgs !== undefined){
-			while(args.length < numberOfRequiredArgs){
-				args.push(undefined)
-			}
-			args = args.slice(0, numberOfRequiredArgs)
-		}
-		for(let a = 0; a < args.length; a++){
-			if(!isNaN(args[a])){
-				args[a] = roundToThreeDecimalPlaces(args[a])
-			}
-		}
-	}
-	this.args = args
-}
-FunctionCall.prototype.toString = function(){
-	const output = this.name + '('
-	if(this.args){
-		output += args.join(', ')
-	}
-	output += ')'
-	if(!this.omitSemicolon){
-		output += ''
-	}
-	return output
-}
-*/
 
 const getAttrs = function(element, attrNames, defaultAttrValues){
 	const arr = []
@@ -557,12 +432,15 @@ const css3ColorToPJSParameters = function(color, opacity){
 			return
 		}
 	}else if(color[0] === 'r'){
-		parameters = color.slice(color.indexOf('(') + 1, -1)
+		parameters = color.slice(color.indexOf('(') + 1, -1).replace(/ /g, '').split(',')
 	}else if(color[0] === '#'){
 		parameters = hexToRGB(color.substring(1))
 	}
-	if(styleIsDefined(opacity)){
-		parameters += ', ' + (opacity * 255)
+	if(parameters[0] === parameters[1] && parameters[1] === parameters[2]){
+		parameters = [parameters[0]]
+	}
+	if(styleIsDefined(opacity) && opacity < 1){
+		parameters.push(opacity * 255)
 	}
 	return parameters
 }
@@ -574,7 +452,7 @@ const hexToRGB = function(hex){
 		}
 	}
 	const bigInt = parseInt(hex, 16)
-	return [(bigInt >> 16) & 255, (bigInt >> 8) & 255, bigInt & 255].join(', ')
+	return [(bigInt >> 16) & 255, (bigInt >> 8) & 255, bigInt & 255]
 }
 
 const quadraticBezierToCubicBezierControlPoints = function(x1, y1, x2, y2, x3, y3){
@@ -617,12 +495,8 @@ Array.prototype.addNumbers = function(arr){
 	console.log('after', this)
 	return this
 }
-
-const addSwappedKeysAndValues = function(obj){
-	for(const key in obj){
-		obj[obj[key]] = key
-	}
-	return obj
+Array.prototype.equals = function(array){
+	return this.length === array.length && this.every((x, i) => x === array[i])
 }
 
 }
