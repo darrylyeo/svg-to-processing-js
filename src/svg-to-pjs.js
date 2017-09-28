@@ -1,22 +1,22 @@
-var creditLine = "/**\n * Converted from SVG format using @darrylyeo's SVG-to-PJS converter:\n * darryl-yeo.com/svg-to-processing-js-converter\n */";
+const creditLine = "/**\n * Converted from SVG format using @darrylyeo's SVG-to-PJS converter:\n * darryl-yeo.com/svg-to-processing-js-converter\n */";
 
-var wrapper = document.getElementById("svg-to-pjs-converter");
+const wrapper = document.getElementById("svg-to-pjs-converter");
 
-var output = document.getElementById("svg-output");
-var outputWindow = output.contentWindow;
-var outputDocument = output.contentDocument || output.contentWindow.document;
-var pathDataScript = outputDocument.createElement("script");
+const output = document.getElementById("svg-output");
+const outputWindow = output.contentWindow;
+const outputDocument = output.contentDocument || output.contentWindow.document;
+const pathDataScript = outputDocument.createElement("script");
 pathDataScript.setAttribute("src", "../src/path-data-polyfill.js")
 outputDocument.head.appendChild(pathDataScript);
 
-var outputWrapper = document.getElementById("svg-to-pjs-output");
-var pjsOutput = document.getElementById("pjs-output");
+const outputWrapper = document.getElementById("svg-to-pjs-output");
+const pjsOutput = document.getElementById("pjs-output");
 
-var svgFilePicker = document.getElementById('svg-file');
-var svgInput = document.getElementById('svg-input');
-var optionCenterGraphic = document.getElementById('svg-option-center-graphic');
-var optionRoundDecimals = document.getElementById('svg-option-round-decimals');
-var optionRoundToDecimalPlaces = document.getElementById('svg-option-round-to-decimal-places');
+const svgFilePicker = document.getElementById('svg-file');
+const svgInput = document.getElementById('svg-input');
+const optionCenterGraphic = document.getElementById('svg-option-center-graphic');
+const optionRoundDecimals = document.getElementById('svg-option-round-decimals');
+const optionRoundToDecimalPlaces = document.getElementById('svg-option-round-to-decimal-places');
 
 optionCenterGraphic.addEventListener('change', updateSVGOutput, false);
 optionRoundDecimals.addEventListener('change', function(e) {
@@ -26,11 +26,11 @@ optionRoundDecimals.addEventListener('change', function(e) {
 optionRoundToDecimalPlaces.addEventListener('change', updateSVGOutput, false);
 
 svgFilePicker.addEventListener('change', function(e) {
-	var files = e.target.files; // FileList object
+	const files = e.target.files; // FileList object
 
 	// files is a FileList of File objects. List some properties.
-	for (var i = 0, f; f = files[i++];) {
-		var reader = new FileReader();
+	for (const f of files) {
+		const reader = new FileReader();
 
 		reader.onloadend = function(e) {
 			if (e.target.readyState == FileReader.DONE) { // DONE == 2
@@ -55,7 +55,7 @@ svgInput.addEventListener('keyup', function(e){
 function updateSVGOutput(data){
 	wrapper.classList.add("input-received");
 	
-	var svg = outputDocument.body.querySelector("svg");
+	let svg = outputDocument.body.querySelector("svg");
 	svg && svg.parentNode.removeChild(svg);
 	outputDocument.body.innerHTML += data;
 
@@ -81,9 +81,9 @@ function updateSVGOutput(data){
 }
 
 
-var offsetX, offsetY;
-var svgRoundNumbers, svgRoundToDecimalPlaces;
-var svgToPJS = function(svg, centerGraphic, roundNumbers, roundToDecimalPlaces){
+let offsetX, offsetY;
+let svgRoundNumbers, svgRoundToDecimalPlaces;
+const svgToPJS = function(svg, centerGraphic, roundNumbers, roundToDecimalPlaces){
 	offsetX = centerGraphic ? parseFloat(svg.getAttribute("width")) / -2 : 0;
 	offsetY = centerGraphic ? parseFloat(svg.getAttribute("height")) / -2 : 0;
 
@@ -91,32 +91,32 @@ var svgToPJS = function(svg, centerGraphic, roundNumbers, roundToDecimalPlaces){
 	svgRoundToDecimalPlaces = roundToDecimalPlaces;
 
 	// Trim overrideable function calls that are redundant
-	var output = svgTagToPJS(svg).split("\n");
+	const output = svgTagToPJS(svg).split("\n");
 
-	var overrideableFunctions = {
+	const overrideableFunctions = {
 		"fill" : "fill",
 		"noFill" : "fill",
 		"stroke" : "stroke",
 		"noStroke" : "stroke",
 		"strokeCap" : "strokeCap"
 	};
-	var lastOverrideableFunctionCallForName = {
+	const lastOverrideableFunctionCallForName = {
 		// "mapped name" : ["function call", line#]
 		"fill": ["", 0],
 		"stroke": ["", 0],
 		"strokeCap": ["", 0],
 	}
-	var nonOverrideableFunctionWasCalledSinceLastOverrideableFunction = false;
-	for(var f = 0; f < output.length; f++){
-		var functionCall = output[f];
-		var functionName = nameOfFunctionCall(functionCall);
+	let nonOverrideableFunctionWasCalledSinceLastOverrideableFunction = false;
+	for(let f = 0; f < output.length; f++){
+		const functionCall = output[f];
+		const functionName = nameOfFunctionCall(functionCall);
 		//console.log("---------\n" + f + " " + functionCall)
 
-		var mappedFunctionName = overrideableFunctions[functionName];
+		const mappedFunctionName = overrideableFunctions[functionName];
 		if(mappedFunctionName){
-			var lastOverrideableFunctionCall = lastOverrideableFunctionCallForName[mappedFunctionName][0];
+			const lastOverrideableFunctionCall = lastOverrideableFunctionCallForName[mappedFunctionName][0];
 			var lastOverrideableFunctionCallLineNumber = lastOverrideableFunctionCallForName[mappedFunctionName][1];
-			var lastOverrideableFunctionCallName = nameOfFunctionCall(lastOverrideableFunctionCall);
+			const lastOverrideableFunctionCallName = nameOfFunctionCall(lastOverrideableFunctionCall);
 			// If the current function call exactly matches the last function call for the same mapped name, remove the current function call
 			if(functionCall === lastOverrideableFunctionCall){
 				//console.log("Matches call on line " + lastOverrideableFunctionCallLineNumber + ": removing this line " + functionCall);
@@ -135,9 +135,9 @@ var svgToPJS = function(svg, centerGraphic, roundNumbers, roundToDecimalPlaces){
 		lastOverrideableFunctionCallForName[mappedFunctionName] = [functionCall, output[f] ? f : lastOverrideableFunctionCallLineNumber];
 	}
 	/*
-	for(var f = 0; f < output.length; f++){
-		var functionName = output[f].substr(0, output[f].indexOf('('));
-		var functionName1 = ((f + 1) < output.length) ? output[f + 1].substr(0, output[f + 1].indexOf('(')) : "";
+	for(let f = 0; f < output.length; f++){
+		const functionName = output[f].substr(0, output[f].indexOf('('));
+		const functionName1 = ((f + 1) < output.length) ? output[f + 1].substr(0, output[f + 1].indexOf('(')) : "";
 		if((functionName === functionName1 && overrideableFunctions[functionName]) || overrideableFunctions[functionName] === functionName1){
 			output[f] = undefined;
 		}
@@ -149,15 +149,15 @@ var svgToPJS = function(svg, centerGraphic, roundNumbers, roundToDecimalPlaces){
 function svgTagToPJS(svgTag){
 	if(!svgTag) return '';
 
-	var output = [];
-	var tagName = svgTag.tagName;
+	const output = [];
+	const tagName = svgTag.tagName;
 
-	var computedStyle = outputWindow.getComputedStyle(svgTag);
+	const computedStyle = outputWindow.getComputedStyle(svgTag);
 
-	var fill = computedStyle.fill;
-	var fillOpacity = computedStyle.fillOpacity;
+	const fill = computedStyle.fill;
+	const fillOpacity = computedStyle.fillOpacity;
 	if(styleIsDefined(fill)){
-		var pjsParameters = css3ColorToPJSParameters(fill, fillOpacity);
+		const pjsParameters = css3ColorToPJSParameters(fill, fillOpacity);
 		output.push(functionCallAsString(pjsParameters ? "fill" : "noFill", pjsParameters));
 	}else if(fill === "none" || fill === "transparent"){
 		output.push(functionCallAsString("noFill"));
@@ -165,19 +165,19 @@ function svgTagToPJS(svgTag){
 		output.push(functionCallAsString("fill", 0));
 	}
 
-	var stroke = computedStyle.stroke;
-	var strokeOpacity = computedStyle.strokeOpacity;
+	const stroke = computedStyle.stroke;
+	const strokeOpacity = computedStyle.strokeOpacity;
 	if(styleIsDefined(stroke)){
-		var pjsParameters = css3ColorToPJSParameters(stroke, strokeOpacity);
+		const pjsParameters = css3ColorToPJSParameters(stroke, strokeOpacity);
 		output.push(functionCallAsString(pjsParameters ? "stroke" : "noStroke", pjsParameters));
 	}else{
 		output.push(functionCallAsString("noStroke"));
 	}
 
-	var strokeWidth = computedStyle.strokeWidth;
+	const strokeWidth = computedStyle.strokeWidth;
 	if(styleIsDefined(strokeWidth)) output.push(functionCallAsString("strokeWeight", parseInt(strokeWidth)));
 
-	var strokeLineCap = computedStyle.strokeLineCap;
+	const strokeLineCap = computedStyle.strokeLineCap;
 	if(styleIsDefined(strokeLineCap)){
 		output.push("strokeCap", {
 			"butt" : "SQUARE",
@@ -189,8 +189,8 @@ console.log(tagName);
 	switch(tagName){
 		case "svg":
 		case "g":
-			for(var t = 0; t < svgTag.children.length; t++){
-				output.push(svgTagToPJS(svgTag.children[t]));
+			for(const child of svgTag.children){
+				output.push(svgTagToPJS(child));
 			}
 			break;
 		case "rect":
@@ -246,13 +246,13 @@ console.log(tagName);
 			break;
 		case "polyline":
 		case "polygon":
-			var points = svgTag.getAttribute("points").split(" ");
+			const points = svgTag.getAttribute("points").split(" ");
 			output.push(functionCallAsString("beginShape"));
-			for(var p = 0; p < points.length; p++){
-				if(points[p]){
+			for(const p of points){
+				if(p){
 					output.push(
 						functionCallAsString("vertex",
-							points[p].split(",").addNumbers([
+							p.split(",").addNumbers([
 								offsetX, offsetY
 							])
 						)
@@ -262,18 +262,17 @@ console.log(tagName);
 			output.push(functionCallAsString("endShape", tagName === "polygon" ? "CLOSE" : undefined));
 			break;
 		case "path":
-			var currentPos = {x: 0, y: 0};
+			const currentPos = {x: 0, y: 0};
 
-			var previousBezierControlPoint = {x: 0, y: 0};
-			var previousBezierEndPoint = {x: 0, y: 0};
+			const previousBezierControlPoint = {x: 0, y: 0};
+			const previousBezierEndPoint = {x: 0, y: 0};
 			
-			var pathData = svgTag.getPathData({normalize: true});
+			const pathData = svgTag.getPathData({normalize: true});
 			
-			var pathOpen = false;
+			let pathOpen = false;
 
-			for(var i = 0; i < pathData.length; i++){
-				var segment = pathData[i];
-				var segmentData = segment.values;
+			for(const segment of pathData){
+				const segmentData = segment.values;
 				switch(segment.type){
 					case "Z":
 						pathOpen = false;
@@ -331,7 +330,7 @@ console.log(tagName);
 						break;
 					case "Q":
 					case "T":
-						var cubicBezier = quadraticBezierToCubicBezierControlPoints(
+						const cubicBezier = quadraticBezierToCubicBezierControlPoints(
 							currentPos.x,
 							currentPos.y,
 							segmentData[0] || previousBezierEndPoint.x * 2 - previousBezierControlPoint.x,
@@ -420,23 +419,23 @@ console.log(tagName);
 					])
 				)
 			);
-			for(var t = 0; t < svgTag.children.length; t++){
-				output.push(svgTagToPJS(svgTag.children[t]));
+			for(const child of svgTag.children){
+				output.push(svgTagToPJS(child));
 			}
 			break;
 		case "image":
 			//output.push(functionCallAsString());
 			break;
 		case "use":
-			var tagToUse = outputDocument.querySelector("#svg-output " + svgTag.href);
+			const tagToUse = outputDocument.querySelector("#svg-output " + svgTag.href);
 			output.push(tagToUse ? svgTagToPJS(tagToUse) : "");
 	}
 
 	return output.join("\n");
 }
 
-var functionCallAsString = function(functionName, args, numberOfRequiredArgs, removeSemicolon){
-	var output = functionName + "(";
+const functionCallAsString = function(functionName, args, numberOfRequiredArgs, removeSemicolon){
+	let output = functionName + "(";
 
 	if(typeof args !== "undefined"){
 		if(typeof args === "string"){
@@ -446,11 +445,13 @@ var functionCallAsString = function(functionName, args, numberOfRequiredArgs, re
 		}
 
 		// Add quotes around string parameters
-		/*for(var a = 0; a < args.length; a++){
-			if(typeof args[a] === "string"){
-				args[a] = JSON.stringify('"' + args[a] + '"').slice(1, -1);
+		/*args = args.map(a => {
+			if(typeof a === "string"){
+				return JSON.stringify('"' + a + '"').slice(1, -1);
+			}else{
+				return a;
 			}
-		}*/
+		})*/
 		if(numberOfRequiredArgs !== undefined){
 			while(args.length < numberOfRequiredArgs){
 				args.push(undefined);
@@ -459,14 +460,17 @@ var functionCallAsString = function(functionName, args, numberOfRequiredArgs, re
 		}
 
 		if(svgRoundNumbers){
-			for(var a = 0; a < args.length; a++){
-				if(!isNaN(args[a])){
-					args[a] = roundToDecimalPlaces(args[a], svgRoundToDecimalPlaces);
+			args = args.map(a => {
+				if(!isNaN(a)){
+					return roundToDecimalPlaces(a, svgRoundToDecimalPlaces);
+				}else{
+					return a;
 				}
-			}
+			})
 		}
-		for(var a = args.length - 1; a > 0; a--){
-			if(isNaN(args[a]) || args[a] === "NaN" || args[a] === undefined || args[a] === "undefined"){
+		while(true){
+			const a = args[args.length - 1];
+			if(isNaN(a) || a === "NaN" || a === undefined || a === "undefined"){
 				args.pop();
 			}else{
 				break;
@@ -482,12 +486,12 @@ var functionCallAsString = function(functionName, args, numberOfRequiredArgs, re
 	return output;
 }
 
-var nameOfFunctionCall = function(functionCall){
+const nameOfFunctionCall = function(functionCall){
 	return functionCall.substr(0, functionCall.indexOf('('));
 }
 
 /*
-var FunctionCall = function(name, args, numberOfRequiredArgs, omitSemicolon){
+const FunctionCall = function(name, args, numberOfRequiredArgs, omitSemicolon){
 	this.name = name;
 
 	if(args){
@@ -503,7 +507,7 @@ var FunctionCall = function(name, args, numberOfRequiredArgs, omitSemicolon){
 			}
 			args = args.slice(0, numberOfRequiredArgs);
 		}
-		for(var a = 0; a < args.length; a++){
+		for(let a = 0; a < args.length; a++){
 			if(!isNaN(args[a])){
 				args[a] = roundToThreeDecimalPlaces(args[a]);
 			}
@@ -512,7 +516,7 @@ var FunctionCall = function(name, args, numberOfRequiredArgs, omitSemicolon){
 	this.args = args;
 }
 FunctionCall.prototype.toString = function(){
-	var output = this.name + "(";
+	const output = this.name + "(";
 	if(this.args){
 		output += args.join(", ");
 	}
@@ -524,26 +528,25 @@ FunctionCall.prototype.toString = function(){
 }
 */
 
-var getAttrs = function(element, attrNames, defaultAttrValues){
-	var arr = [];
-	for(var a = 0; a < attrNames.length; a++){
-		var attrName = attrNames[a];
-		var value = element.getAttribute(attrName);
+const getAttrs = function(element, attrNames, defaultAttrValues){
+	const arr = [];
+	attrNames.forEach((attrName, a) => {
+		let value = element.getAttribute(attrName);
 		if((value === null || typeof value === "undefined") && defaultAttrValues) value = defaultAttrValues[a];
 		if(typeof value === "string") value = value.trim();
 		//if(!isNaN(value)){
 			arr.push(value);
 		//}
-	}
+	})
 	return arr;
 }
 
-var css3ColorToPJSParameters = function(color, opacity){
+const css3ColorToPJSParameters = function(color, opacity){
 	if(!styleIsDefined(color)) return;
 
-	var parameters;
+	let parameters;
 	if(color[0] === "u"){
-		var linkedElement = outputDocument.querySelector(color.slice(color.indexOf("(") + 1, -1));
+		const linkedElement = outputDocument.querySelector(color.slice(color.indexOf("(") + 1, -1));
 		if(linkedElement && linkedElement.tagName === "linearGradient"){
 			return css3ColorToPJSParameters(window.getComputedStyle(linkedElement.children[0], "stop-color"), opacity);
 		}else{
@@ -560,17 +563,17 @@ var css3ColorToPJSParameters = function(color, opacity){
 	return parameters;
 }
 
-var hexToRGB = function(hex){
+const hexToRGB = function(hex){
 	if(hex.length < 6){
-		for(var i = hex.length - 1; i >= 0; i--){
+		for(let i = hex.length - 1; i >= 0; i--){
 			hex = hex.slice(0, i) + hex[i] + hex.slice(i)
 		}
 	}
-	var bigInt = parseInt(hex, 16);
+	const bigInt = parseInt(hex, 16);
 	return [(bigInt >> 16) & 255, (bigInt >> 8) & 255, bigInt & 255].join(", ");
 }
 
-var quadraticBezierToCubicBezierControlPoints = function(x1, y1, x2, y2, x3, y3){
+const quadraticBezierToCubicBezierControlPoints = function(x1, y1, x2, y2, x3, y3){
 	return {
 		x1: x1 + 2/3 * (x2 - x1),
 		y1: y1 + 2/3 * (y2 - y1),
@@ -579,21 +582,21 @@ var quadraticBezierToCubicBezierControlPoints = function(x1, y1, x2, y2, x3, y3)
 	}
 }
 
-var roundToDecimalPlaces = function(num, decimalPlaces){
+const roundToDecimalPlaces = function(num, decimalPlaces){
 	return Math.round((parseFloat(num) + 1/Math.pow(10, decimalPlaces*2)) * Math.pow(10, decimalPlaces)) / Math.pow(10, decimalPlaces);
 }
 
-var styleIsDefined = function(style){
+const styleIsDefined = function(style){
 	return style !== undefined && style !== null && style !== "none" && style !== "transparent";
 }
 
-var getTextNodes = function(element){
-	var nodes = element.childNodes;
-	var t = '';
+const getTextNodes = function(element){
+	const nodes = element.childNodes;
+	const t = '';
 
-	for(var i = 0; i < nodes.length; i++) {
-		if(nodes[i].nodeType == 3) {
-			t += nodes[i].nodeValue;
+	for(const node of nodes) {
+		if(node.nodeType == 3) {
+			t += node.nodeValue;
 		}
 	}
 
@@ -602,7 +605,7 @@ var getTextNodes = function(element){
 
 Array.prototype.addNumbers = function(arr){
 	console.log("before", this, arr)
-	for(var n = 0; n < Math.min(this.length, arr.length); n++){
+	for(let n = 0; n < Math.min(this.length, arr.length); n++){
 		if(/*!isNaN(this[n]) && */!isNaN(arr[n])){
 			this[n] = +this[n] + arr[n];
 		}
@@ -611,8 +614,8 @@ Array.prototype.addNumbers = function(arr){
 	return this;
 }
 
-var addSwappedKeysAndValues = function(obj){
-	for(var key in obj){
+const addSwappedKeysAndValues = function(obj){
+	for(const key in obj){
 		obj[obj[key]] = key;
 	}
 	return obj;
